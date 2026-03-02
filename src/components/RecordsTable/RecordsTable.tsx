@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { Carton } from '../../db/dexie';
 
 const STATUS_COLORS: Record<Carton['status'], string> = {

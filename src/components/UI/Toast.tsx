@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+
 import { useAppStore } from '../../store/useAppStore';
 import type { ToastItem } from '../../store/useAppStore';
 
