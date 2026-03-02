@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: russian-application-scanner
+    runtime: docker
+    repo: https://github.com/friendy21/Russian-application-scanner
+    branch: main
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 10000
+    healthCheckPath: /
