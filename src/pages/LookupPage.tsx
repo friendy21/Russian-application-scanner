@@ -85,7 +85,7 @@ export function LookupPage() {
             {loading && (
                 <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
                     <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Looking up product information…</p>
-                    <p style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '0.25rem' }}>Querying Open Food Facts + translating</p>
+                    <p style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '0.25rem' }}>Querying Chestny ZNAK / Open Food Facts + translating</p>
                 </div>
             )}
 
@@ -106,12 +106,29 @@ export function LookupPage() {
                         {current.product.status === 'found' ? 'Product Found' : current.product.status === 'not_found' ? 'GTIN Known — Product Not in DB' : 'Error'}
                     </span>
 
-                    {/* Product name */}
+                    {/* Product name — Russian primary, English translation secondary */}
                     <div>
-                        <p style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' }}>Product Name (English)</p>
-                        <p style={{ fontWeight: 700, fontSize: '1.125rem', color: '#0f172a' }}>{current.product.name}</p>
-                        {current.product.nameRu && (
-                            <p style={{ fontSize: '0.75rem', color: '#94a3b8', fontFamily: 'monospace' }}>{current.product.nameRu}</p>
+                        {current.product.nameRu ? (
+                            <>
+                                <p style={{ fontSize: '0.625rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.2rem' }}>
+                                    Название товара (Russian)
+                                </p>
+                                <p style={{ fontWeight: 700, fontSize: '1.25rem', color: '#0f172a', fontFamily: 'serif', lineHeight: 1.3 }}>
+                                    {current.product.nameRu}
+                                </p>
+                                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem', fontStyle: 'italic' }}>
+                                    {current.product.name}
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <p style={{ fontSize: '0.625rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.2rem' }}>
+                                    Product Name
+                                </p>
+                                <p style={{ fontWeight: 700, fontSize: '1.125rem', color: '#0f172a' }}>
+                                    {current.product.name}
+                                </p>
+                            </>
                         )}
                     </div>
 
@@ -120,7 +137,7 @@ export function LookupPage() {
                         {[
                             { label: 'GTIN-14', value: current.parsed.gtin },
                             { label: 'EAN-13', value: current.parsed.ean13 },
-                            { label: 'Brand', value: current.product.brand },
+                            { label: 'Brand', value: current.product.brandRu ? `${current.product.brandRu} (${current.product.brand})` : current.product.brand },
                             { label: 'Category', value: current.product.category },
                             { label: 'Serial', value: current.parsed.serial?.slice(0, 16) },
                             { label: 'Source', value: current.product.source },
