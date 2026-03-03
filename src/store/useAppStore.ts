@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Scan } from '../db/dexie';
 
-export type AppTab = 'pack' | 'verify' | 'records' | 'settings';
+export type AppTab = 'pack' | 'verify' | 'lookup' | 'records' | 'settings';
+
 
 export interface ToastItem {
     id: string;

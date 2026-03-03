@@ -7,6 +7,7 @@ import { ScanPackPage } from './pages/ScanPackPage';
 import { VerifyPage } from './pages/VerifyPage';
 import { RecordsPage } from './pages/RecordsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { LookupPage } from './pages/LookupPage';
 
 export default function App() {
   const { darkMode, currentTab } = useAppStore();
@@ -30,6 +31,7 @@ export default function App() {
         {currentTab === 'pack' && <ScanPackPage />}
         {currentTab === 'verify' && <VerifyPage />}
         {currentTab === 'records' && <RecordsPage />}
+        {currentTab === 'lookup' && <LookupPage />}
         {currentTab === 'settings' && <SettingsPage />}
       </main>
 

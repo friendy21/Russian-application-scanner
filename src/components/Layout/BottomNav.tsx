@@ -3,6 +3,7 @@ import { useAppStore, type AppTab } from '../../store/useAppStore';
 const TABS: { id: AppTab; label: string; icon: string }[] = [
     { id: 'pack', label: 'Scan & Pack', icon: '▣' },
     { id: 'verify', label: 'Verify', icon: '✓' },
+    { id: 'lookup', label: 'Lookup', icon: '⌕' },
     { id: 'records', label: 'Records', icon: '⊞' },
     { id: 'settings', label: 'Settings', icon: '⚙' },
 ];

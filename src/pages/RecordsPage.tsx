@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { RecordsTable } from '../components/RecordsTable/RecordsTable';
 import { useAppStore } from '../store/useAppStore';
-import { getCartonsInRange, getScansByCarton } from '../db/helpers';
+import { getCartonsInRange, getScansByCarton, getProductLookupsInRange } from '../db/helpers';
 import { exportToExcel } from '../utils/excelExport';
 import type { Carton, Scan } from '../db/dexie';
 
@@ -36,14 +36,19 @@ export function RecordsPage() {
     const handleExport = async () => {
         setExporting(true);
         try {
+            const from = new Date(fromDate);
+            const to = new Date(toDate);
+            to.setHours(23, 59, 59, 999);
+
             const allScans: Scan[] = [];
             for (const c of cartons) {
                 const scans = await getScansByCarton(c.carton_id);
                 allScans.push(...scans);
             }
-            exportToExcel(cartons, allScans);
-            showToast('success', 'Excel export downloaded');
-        } catch (err) {
+            const lookups = await getProductLookupsInRange(from, to);
+            exportToExcel(cartons, allScans, lookups);
+            showToast('success', `Excel exported — ${cartons.length} carton(s), ${lookups.length} lookup(s)`);
+        } catch {
             showToast('error', 'Export failed');
         } finally {
             setExporting(false);
