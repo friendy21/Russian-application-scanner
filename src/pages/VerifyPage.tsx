@@ -40,13 +40,20 @@ export function VerifyPage() {
 
     const handleMasterQRDecode = useCallback(
         (raw: string) => {
+            // Extract JSON substring — tolerates whitespace, URL prefixes, or control chars around the payload
+            const start = raw.indexOf('{');
+            const end = raw.lastIndexOf('}');
+            const jsonStr = start !== -1 && end > start ? raw.slice(start, end + 1) : raw;
+
             try {
-                const payload = parsePayload(raw);
+                const payload = parsePayload(jsonStr);
                 startVerifySession(payload.cid, payload.codes);
                 logVerificationEvent(payload.cid, 'start');
                 setPhase('verify-codes');
             } catch {
-                showToast('error', 'Invalid Master QR — cannot parse payload');
+                // Show what was actually decoded to help operator diagnose
+                const preview = raw.length > 60 ? raw.slice(0, 60) + '…' : raw;
+                showToast('error', `Invalid Master QR. Decoded: "${preview}"`);
             }
         },
         [startVerifySession, showToast],

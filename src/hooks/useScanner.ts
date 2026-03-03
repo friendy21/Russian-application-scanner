@@ -5,14 +5,27 @@ import { normaliseCode } from '../utils/cyrillicUtils';
 
 interface UseScannerOptions {
     onDecode: (code: string) => void;
-    onError?: (err: Error) => void;
+    onError?: (err: string) => void;
     debounceMs?: number;
 }
 
 export interface ScannerControls {
-    startScanner: (videoEl: HTMLVideoElement, deviceId?: string) => Promise<void>;
+    startScanner: (videoEl: HTMLVideoElement, facingMode?: 'environment' | 'user') => Promise<void>;
     stopScanner: () => void;
     getDevices: () => Promise<MediaDeviceInfo[]>;
+}
+
+/** ZXing throws its own exception types — not subclasses of Error.
+ *  NotFoundException fires every frame when no code is in view — this is normal, never show it. */
+function isNotFound(err: unknown): boolean {
+    if (!err) return true;
+    const msg = (err as { message?: string })?.message ?? String(err);
+    return (
+        msg.includes('MultiFormatReader') ||
+        msg.includes('NotFoundException') ||
+        msg.toLowerCase().includes('no code') ||
+        (err as { name?: string })?.name === 'NotFoundException'
+    );
 }
 
 export function useScanner({
@@ -20,11 +33,9 @@ export function useScanner({
     onError,
     debounceMs = 1000,
 }: UseScannerOptions): ScannerControls {
-    const readerRef = useRef<BrowserMultiFormatReader | null>(null);
     const lastCodeRef = useRef<Map<string, number>>(new Map());
     const activeControlsRef = useRef<{ stop: () => void } | null>(null);
 
-    // Clean up on unmount
     useEffect(() => {
         return () => {
             activeControlsRef.current?.stop();
@@ -54,8 +65,7 @@ export function useScanner({
     }, []);
 
     const startScanner = useCallback(
-        async (videoEl: HTMLVideoElement, deviceId?: string) => {
-            // Stop any existing session
+        async (videoEl: HTMLVideoElement, facingMode: 'environment' | 'user' = 'environment') => {
             activeControlsRef.current?.stop();
 
             const hints = new Map<DecodeHintType, unknown>();
@@ -69,22 +79,48 @@ export function useScanner({
             hints.set(DecodeHintType.CHARACTER_SET, 'UTF-8');
 
             const reader = new BrowserMultiFormatReader(hints);
-            readerRef.current = reader;
+
+            // High-resolution rear camera constraints — critical for small DataMatrix on bottle caps
+            const videoConstraints: MediaTrackConstraints = {
+                facingMode: { ideal: facingMode },
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+                // focusMode is a non-standard extension supported by Android Chrome
+                ...(({ focusMode: { ideal: 'continuous' } }) as Record<string, unknown>),
+            };
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: videoConstraints,
+                audio: false,
+            }).catch(() =>
+                navigator.mediaDevices.getUserMedia({ video: { facingMode } })
+            );
+
+            videoEl.srcObject = stream;
+            await videoEl.play();
 
             try {
-                const controls = await reader.decodeFromVideoDevice(
-                    deviceId ?? undefined,
+                const controls = await reader.decodeFromStream(
+                    stream,
                     videoEl,
                     (result, err) => {
                         if (result) handleResult(result);
-                        if (err && !(err instanceof Error && err.name === 'NotFoundException')) {
-                            onError?.(err as Error);
+                        // Suppress NotFoundException — fires every frame with no code present
+                        if (err && !isNotFound(err)) {
+                            onError?.(String((err as { message?: string })?.message ?? err));
                         }
                     },
                 );
-                activeControlsRef.current = controls;
+                activeControlsRef.current = {
+                    stop: () => {
+                        controls.stop();
+                        stream.getTracks().forEach((t) => t.stop());
+                    },
+                };
             } catch (err) {
-                onError?.(err as Error);
+                stream.getTracks().forEach((t) => t.stop());
+                if (!isNotFound(err)) {
+                    onError?.(String((err as { message?: string })?.message ?? err));
+                }
             }
         },
         [handleResult, onError],
